@@ -21,7 +21,7 @@ struct Point
 {
    double x, y;
 
-   bool operator==(const Point& p) const { return x == p.x && y == p.y; }
+   bool operator==(const Point& p) const { return abs(x - p.x) < 1e-9 && abs(y - p.y) < 1e-9; }
    double operator%(const Point& p) const { return x*p.x + y*p.y; }
    double operator*(const Point& p) const { return x*p.y - y*p.x; }
    Point operator/(const double value) const { return { x / value, y / value }; }
@@ -29,62 +29,84 @@ struct Point
    Point operator+(const Point& p) const { return { x + p.x, y + p.y }; }
 };
 
-double angle(const Point& p1, const Point& p2)
+struct ConvexHull
 {
-   auto t = p2 - p1;
-   return atan2(t.y, t.x);
-}
-
-std::map<double, Point> newAlgo(std::vector<Point> points)
-{
-   std::map<double, Point> result;
-   const auto prevIt = [&](auto it) { return it == result.begin() ? prev(result.end()) : prev(it); };
-   const auto nextIt = [&](auto it) { ++it; return it == result.end() ? result.begin() : it; };
-   const auto getIt = [&](auto it) { return it == result.end() ? result.begin() : it; };
-
-   // first 2 points: maxX, minX
-   for (auto& point : points)
+   struct less
    {
-      if (point.x > points[0].x) std::swap(point, points[0]);
-      if (point.x < points[1].x) std::swap(point, points[1]);
-   }
-   auto divideVect = points[0] - points[1];
-   for (size_t i = 3; i < points.size(); ++i)
-   {
-      if (abs((points[i] - points[1]) * divideVect) >
-         abs((points[2] - points[1]) * divideVect))
-         std::swap(points[i], points[2]);
-   }
-
-   Point center{ 0, 0 };
-   for (size_t i = 0; i < 3U; ++i)
-      center = center + points[i];
-   center = center / 3;
-
-   for (const auto& point : points)
-   {
-      const auto ang = angle(center, point);
-      if (result.size() < 3)
+      bool operator()(const Point& left, const Point& right) const
       {
-         result[ang] = point;
-         continue;
+         const bool leftUp =  0 < left.y;
+         const bool rightUp = 0 < right.y;
+         if (leftUp != rightUp)
+            return leftUp < rightUp;
+         if (left.y == right.y && left.y == 0)
+            return (0 < left.x) < (0 < right.x);
+
+         return left * right > 0.0;
       }
+   };
 
-      auto it = getIt(result.upper_bound(ang));
-      auto pr = prevIt(it);
+   void AddPoint(const Point& pt)
+   {
+      const Point point = pt - center;
+      if (convexHull.size() < 2)
+      {
+         convexHull.emplace(point);
+         return;
+      }
+      auto next = getIt(convexHull.upper_bound(point));
+      auto prev = prevIt(next);
 
-      if ((point - pr->second) * (it->second - pr->second) > 0.0)
+      if ((point - *prev) * (*next - *prev) > 0.0)
       {
          // works not well on it and pr on different sides of tree
-         result.emplace_hint(it, ang, point);
+         convexHull.emplace_hint(prev, point);
 
-         while ((nextIt(it)->second - point) * (it->second - point) > 0.0)
-            it = getIt(result.erase(it));
-         while ((prevIt(pr)->second - point) * (pr->second - point) < 0.0)
-            pr = prevIt(result.erase(pr));
+         while ((*nextIt(next) - point) * (*next - point) > 0.0)
+            next = getIt(convexHull.erase(next));
+         while ((*prevIt(prev) - point) * (*prev - point) < 0.0)
+            prev = prevIt(convexHull.erase(prev));
       }
    }
-   return result;
+
+   ConvexHull(Point center) : center(center) {}
+
+private:
+   std::set<Point, less>::iterator getIt(std::set<Point, less>::iterator it) const noexcept
+   {
+      return it != convexHull.end() ? it : convexHull.begin();
+   }
+   std::set<Point, less>::iterator nextIt(std::set<Point, less>::iterator it) const noexcept
+   {
+      return getIt(std::next(it));
+   }
+   std::set<Point, less>::iterator prevIt(std::set<Point, less>::iterator it) const noexcept
+   {
+      return it != convexHull.begin() ? std::prev(it) : std::prev(convexHull.end());
+   }
+
+public: // temporary public
+   Point center;
+   std::set<Point, less> convexHull;
+};
+
+ConvexHull newAlgo(const std::vector<Point>& points)
+{
+   Point maxPoint = points[0];
+   Point minPoint = points[1];
+   for (const Point& point : points)
+   {
+      if (point.x > maxPoint.x) maxPoint = point;
+      if (point.x < minPoint.x) minPoint = point;
+   }
+   ConvexHull convexHull{ (minPoint + maxPoint) / 2 };
+   convexHull.AddPoint(minPoint);
+   convexHull.AddPoint(maxPoint);
+
+   for (const Point& point : points)
+      convexHull.AddPoint(point);
+
+   return convexHull;
 }
 
 std::vector<Point> grahamScan(std::vector<Point> points)
@@ -117,16 +139,16 @@ std::vector<Point> getRandomPoints(std::mt19937& i_gen, size_t n)
    return result;
 }
 
-bool areEqualHulls(const std::map<double, Point>& first, const std::vector<Point>& second)
+bool areEqualHulls(const ConvexHull& first, const std::vector<Point>& second)
 {
-   if (first.size() != second.size()) return false;
+   if (first.convexHull.size() != second.size()) return false;
 
    for (size_t beg = 0; beg < second.size(); ++beg)
    {
-      auto it = first.begin();
+      auto it = first.convexHull.begin();
       bool areEqual = true;
       for (size_t i = 0; i < second.size(); ++i, ++it)
-         areEqual &= (it->second == second[(i + beg) % second.size()]);
+         areEqual &= ((*it + first.center) == second[(i + beg) % second.size()]);
       if (areEqual)
          return true;
    }
@@ -140,8 +162,8 @@ int main()
    std::mt19937 gen(19);
    double myTime = 0.0;
    double grahamTime = 0.0;
-   const size_t testsNum = 100;
-   const size_t pointsNum = 1000;
+   const size_t testsNum = 10;
+   const size_t pointsNum = 1'000'000;
 
    for (size_t test = 0; test < testsNum; ++test)
    {
@@ -156,7 +178,7 @@ int main()
 
       myTime += duration_cast<duration<double>>(t2 - t1).count();
       grahamTime += duration_cast<duration<double>>(t3 - t2).count();
-
+      /*
       if (!areEqualHulls(res1, res2))
       {
          cout << "test: " << test << '\n';
@@ -164,13 +186,17 @@ int main()
          for (const auto& p : points)
             cout << p.x << ' ' << p.y << '\n';
          cout << "--------------------My-----------------\n";
-         for (const auto& p : res1)
-            cout << p.second.x << ' ' << p.second.y << '\n';
+         for (auto p : res1.convexHull)
+         {
+            p = p + res1.center;
+            cout << p.x << ' ' << p.y << '\n';
+         }
          cout << "------------------Graham---------------\n";
          for (const auto& p : res2)
             cout << p.x << ' ' << p.y << '\n';
          break;
       }
+      */
    }
 
    cout << "new algo: " << myTime << "\ngraham: " << grahamTime << '\n';
