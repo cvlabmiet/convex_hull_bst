@@ -1,21 +1,15 @@
-#include <iostream>
-#include <vector>
-#include <list>
-#include <map>
-#include <set>
-#include <unordered_map>
-#include <unordered_set>
-#include <string>
-#include <algorithm>
-#include <functional>
-#include <numeric>
 #include <cmath>
 #include <cstdio>
+#include <algorithm>
+#include <chrono>
+#include <iostream>
+#include <vector>
+#include <set>
+#include <functional>
+#include <fstream>
+#include <numeric>
 #include <queue>
 #include <random>
-#include <chrono>
-
-using namespace std;
 
 struct Point
 {
@@ -130,15 +124,6 @@ std::vector<Point> grahamScan(std::vector<Point> points)
    return result;
 }
 
-std::vector<Point> getRandomPoints(std::mt19937& i_gen, size_t n)
-{
-   std::uniform_real_distribution<double> dist;
-   std::vector<Point> result;
-   result.reserve(n);
-   for (size_t i = 0; i < n; ++i) result.push_back({ dist(i_gen), dist(i_gen) });
-   return result;
-}
-
 bool areEqualHulls(const ConvexHull& first, const std::vector<Point>& second)
 {
    if (first.convexHull.size() != second.size()) return false;
@@ -155,51 +140,48 @@ bool areEqualHulls(const ConvexHull& first, const std::vector<Point>& second)
    return false;
 }
 
+void verifyEquality(const ConvexHull& first, const std::vector<Point>& second)
+{
+   if (!areEqualHulls(first, second))
+      throw std::exception("not equal hulls");
+}
+
 using namespace std::chrono;
+
+template<class TFn>
+double measureAlgo(TFn fn, const std::vector<Point>& points)
+{
+   const size_t testsNum = std::max(10U, 100'000U / points.size());
+   const auto tStart = high_resolution_clock::now();
+
+   for (size_t test = 0; test < testsNum; ++test)
+      const auto res = fn(points);
+
+   const auto tEnd = high_resolution_clock::now();
+
+   return duration_cast<duration<double>>(tEnd - tStart).count() / testsNum;
+}
 
 int main()
 {
-   std::mt19937 gen(19);
-   double myTime = 0.0;
-   double grahamTime = 0.0;
-   const size_t testsNum = 10;
-   const size_t pointsNum = 1'000'000;
+   std::ifstream fin("in.txt");
+   std::ofstream fout("out.txt");
 
+   std::ofstream("algoNames.txt") << "new algo\ngraham scan\n";
+
+   size_t testsNum;
+   fin >> testsNum;
    for (size_t test = 0; test < testsNum; ++test)
    {
-      auto points = getRandomPoints(gen, pointsNum);
+      int pointsNum;
+      fin >> pointsNum;
+      std::vector<Point> points(pointsNum);
+      for (Point& point : points) fin >> point.x >> point.y;
 
-      const auto t1 = high_resolution_clock::now();
-      auto res1 = newAlgo(points);
-
-      const auto t2 = high_resolution_clock::now();
-      auto res2 = grahamScan(points);
-      const auto t3 = high_resolution_clock::now();
-
-      myTime += duration_cast<duration<double>>(t2 - t1).count();
-      grahamTime += duration_cast<duration<double>>(t3 - t2).count();
-      /*
-      if (!areEqualHulls(res1, res2))
-      {
-         cout << "test: " << test << '\n';
-         cout << "------------------Points---------------\n";
-         for (const auto& p : points)
-            cout << p.x << ' ' << p.y << '\n';
-         cout << "--------------------My-----------------\n";
-         for (auto p : res1.convexHull)
-         {
-            p = p + res1.center;
-            cout << p.x << ' ' << p.y << '\n';
-         }
-         cout << "------------------Graham---------------\n";
-         for (const auto& p : res2)
-            cout << p.x << ' ' << p.y << '\n';
-         break;
-      }
-      */
+      fout
+         << measureAlgo(newAlgo, points) << ' '
+         << measureAlgo(grahamScan, points) << '\n';
    }
-
-   cout << "new algo: " << myTime << "\ngraham: " << grahamTime << '\n';
 
    return 0;
 }
