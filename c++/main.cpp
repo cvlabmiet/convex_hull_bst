@@ -152,7 +152,8 @@ using namespace std::chrono;
 template<class TFn>
 double measureAlgo(TFn fn, const std::vector<Point>& points)
 {
-   const size_t testsNum = std::max(10U, 100'000U / points.size());
+   const size_t minTestsNum = 10;
+   const size_t testsNum = std::max(minTestsNum, 100'000U / points.size());
    const auto tStart = high_resolution_clock::now();
 
    for (size_t test = 0; test < testsNum; ++test)
