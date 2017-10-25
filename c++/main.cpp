@@ -10,6 +10,7 @@
 #include <numeric>
 #include <queue>
 #include <random>
+#include <exception>
 
 struct Point
 {
@@ -143,7 +144,7 @@ bool areEqualHulls(const ConvexHull& first, const std::vector<Point>& second)
 void verifyEquality(const ConvexHull& first, const std::vector<Point>& second)
 {
    if (!areEqualHulls(first, second))
-      throw std::exception("not equal hulls");
+      throw std::runtime_error("not equal hulls");
 }
 
 using namespace std::chrono;
