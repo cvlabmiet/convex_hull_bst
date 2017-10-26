@@ -8,5 +8,11 @@ else()
    add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
 
-add_executable(main c++/main.cpp)
+set(ALGO_DIR algorithms)
+
+include_directories(${ALGO_DIR})
+set(ALGO_HEADERS ${ALGO_DIR}/bsthull.h ${ALGO_DIR}/graham.h ${ALGO_DIR}/point.h)
+
+add_executable(main charts/main.cpp ${ALGO_HEADERS})
+
 set_property(TARGET main PROPERTY CXX_STANDARD 14)
