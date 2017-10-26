@@ -39,6 +39,9 @@ struct BstConvexHull
    {
      Point maxPoint = points[0];
      Point minPoint = points[1];
+     if (maxPoint.x < minPoint.x)
+        std::swap(minPoint, maxPoint);
+
      for (const Point& point : points)
      {
         if (point.x > maxPoint.x) maxPoint = point;

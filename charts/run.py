@@ -17,7 +17,9 @@ def genPointsInCircle(size):
 
 def genPointsByPercentInCircle(size, percent):
    pointsOnCircle = round(size * percent)
-   return list(genPointsOnCircle(pointsOnCircle)) + list(genPointsInCircle(size - pointsOnCircle))
+   res = list(genPointsOnCircle(pointsOnCircle)) + list(genPointsInCircle(size - pointsOnCircle))
+   random.shuffle(res)
+   return res
 
 
 def genPointsSquare(size):
@@ -49,7 +51,7 @@ def readResult():
 
 
 def main(executable):
-   x = range(10, 100, 10)
+   x = range(10, 101, 10)
    genInput(x, lambda percent : genPointsByPercentInCircle(100000, percent / 100))
    runTest(executable)
    y = readResult()
