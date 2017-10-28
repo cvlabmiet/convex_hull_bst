@@ -65,3 +65,4 @@ if len(sys.argv) == 2:
    main(sys.argv[1])
 else:
    print("Usage: run.py path_to_executable")
+

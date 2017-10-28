@@ -1,25 +1,17 @@
-#include <cstdio>
 #include <algorithm>
 #include <chrono>
-#include <iostream>
-#include <vector>
-#include <set>
-#include <functional>
 #include <fstream>
-#include <numeric>
-#include <queue>
-#include <random>
-#include <exception>
+#include <vector>
 
 #include "point.h"
 #include "bsthull.h"
 #include "graham.h"
 
-using namespace std::chrono;
 
 template<class TFn>
 double measureAlgo(TFn fn, const std::vector<Point>& points)
 {
+   using namespace std::chrono;
    const size_t minTestsNum = 10;
    const size_t testsNum = std::max(minTestsNum, 100'000U / points.size());
    const auto tStart = high_resolution_clock::now();
