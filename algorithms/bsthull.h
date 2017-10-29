@@ -57,7 +57,6 @@ struct BstConvexHull
      return convexHull;
    }
 
-private:
    struct less
    {
       bool operator()(const Point& left, const Point& right) const
@@ -73,6 +72,10 @@ private:
       }
    };
 
+   const std::set<Point, less>& GetPoints() const { return convexHull; }
+   const Point& GetCenter() const { return center; }
+
+private:
    std::set<Point, less>::iterator getIt(std::set<Point, less>::iterator it) const noexcept
    {
       return it != convexHull.end() ? it : convexHull.begin();
