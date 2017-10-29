@@ -6,6 +6,7 @@
 #include "point.h"
 #include "bsthull.h"
 #include "graham.h"
+#include "chan.h"
 
 
 template<class TFn>
@@ -29,7 +30,7 @@ int main()
    std::ifstream fin("in.txt");
    std::ofstream fout("out.txt");
 
-   std::ofstream("algoNames.txt") << "new algo\ngraham scan\n";
+   std::ofstream("algoNames.txt") << "new algo\ngraham scan\nchan\n";
 
    size_t testsNum;
    fin >> testsNum;
@@ -42,7 +43,8 @@ int main()
 
       fout
          << measureAlgo(algorithms::BstConvexHull::Create, points) << ' '
-         << measureAlgo(algorithms::GrahamScan, points) << '\n';
+         << measureAlgo(algorithms::GrahamScan, points) << ' '
+         << measureAlgo(algorithms::Chan, points) << '\n';
    }
 
    return 0;
