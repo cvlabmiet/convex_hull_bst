@@ -7,26 +7,38 @@
 
 namespace algorithms
 {
-
-std::vector<Point> GrahamScan(std::vector<Point> points)
+template<class It>
+std::vector<Point> GrahamScanInPlace(It begin, It end)
 {
+   if (begin == end)
+      return {};
+
+   // TODO: find not just leftmost, but leftmost, that is at the bottom
    std::vector<Point> result;
-   result.reserve(points.size());
-   for (size_t i = 1; i < points.size(); ++i)
-      if (points[0].x > points[i].x) std::swap(points[0], points[i]);
+   result.reserve(std::distance(begin, end));
+   for (auto it = std::next(begin); it != end; ++it)
+      if (begin->x > it->x) std::swap(*begin, *it);
 
-   sort(points.begin() + 1, points.end(), [&](const Point& left, const Point& right)
-   {
-      return (left - points[0]) * (right - points[0]) > 0.0;
-   });
+   sort(begin + 1, end,
+      [leftMostPoint = *begin](const Point& left, const Point& right)
+      {
+         return (left - leftMostPoint) * (right - leftMostPoint) > 0.0;
+      });
 
-   for (const auto& point : points)
+   for (auto it = begin; it != end; ++it)
    {
-      while (result.size() > 2 && (result.back() - point) * (result[result.size() - 2] - result.back()) > 0.0)
+      const Point& point = *it;
+      while (result.size() > 2 &&
+         (result.back() - point) * (result[result.size() - 2] - result.back()) > 0.0)
          result.pop_back();
       result.push_back(point);
    }
    return result;
+}
+
+std::vector<Point> GrahamScan(std::vector<Point> points)
+{
+   return GrahamScanInPlace(points.begin(), points.end());
 }
 
 }
