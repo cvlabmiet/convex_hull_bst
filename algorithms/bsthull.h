@@ -13,23 +13,31 @@ struct BstConvexHull
    void AddPoint(const Point& pt)
    {
       const Point point = pt - center;
-      if (convexHull.size() < 2)
-      {
-         convexHull.emplace(point);
-         return;
-      }
       auto next = getIt(convexHull.upper_bound(point));
       auto prev = prevIt(next);
 
-      if ((point - *prev) * (*next - *prev) > 0.0)
+      if (ccw(*prev, point, *next))
       {
          // works not well on it and pr on different sides of tree
          convexHull.emplace_hint(prev, point);
 
-         while ((*nextIt(next) - point) * (*next - point) > 0.0)
-            next = getIt(convexHull.erase(next));
-         while ((*prevIt(prev) - point) * (*prev - point) < 0.0)
-            prev = prevIt(convexHull.erase(prev));
+         while (true)
+         {
+            const auto afterNext = nextIt(next);
+            if (ccw(point, *next, *afterNext))
+               break;
+            convexHull.erase(next);
+            next = afterNext;
+         }
+
+         while (true)
+         {
+            const auto beforePrev = prevIt(prev);
+            if (ccw(*beforePrev, *prev, point))
+               break;
+            convexHull.erase(prev);
+            prev = beforePrev;
+         }
       }
    }
 
@@ -47,9 +55,24 @@ struct BstConvexHull
         if (point.x > maxPoint.x) maxPoint = point;
         if (point.x < minPoint.x) minPoint = point;
      }
-     BstConvexHull convexHull{ (minPoint + maxPoint) / 2 };
-     convexHull.AddPoint(minPoint);
-     convexHull.AddPoint(maxPoint);
+     Point furthestPoint = maxPoint;
+     double furthestDist = 0;
+
+     const auto divideVect = maxPoint - minPoint;
+     for (const Point& point : points)
+     {
+        const double dist = abs((point - minPoint) * divideVect);
+        if (dist > furthestDist)
+        {
+           furthestPoint = point;
+           furthestDist = dist;
+        }
+     }
+
+     BstConvexHull convexHull{ (minPoint + maxPoint + furthestPoint) / 3 };
+     convexHull.convexHull.emplace(minPoint - convexHull.center);
+     convexHull.convexHull.emplace(maxPoint - convexHull.center);
+     convexHull.convexHull.emplace(furthestPoint - convexHull.center);
 
      for (const Point& point : points)
         convexHull.AddPoint(point);
@@ -76,6 +99,13 @@ struct BstConvexHull
    const Point& GetCenter() const { return center; }
 
 private:
+   bool ccw(const Point& a, const Point& b, const Point& c) const noexcept
+   {
+      return (b.x*c.y - c.x*b.y) -
+         (a.x*c.y - c.x * a.y) +
+         (a.x*b.y - b.x*a.y) > 0;
+   }
+
    std::set<Point, less>::iterator getIt(std::set<Point, less>::iterator it) const noexcept
    {
       return it != convexHull.end() ? it : convexHull.begin();
