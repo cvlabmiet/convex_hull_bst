@@ -3,6 +3,10 @@
 #include <set>
 #include <iostream>
 
+#include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
+#include <CGAL/ch_akl_toussaint.h>
+#include <CGAL/ch_graham_andrew.h>
+
 #include "bsthull.h"
 #include "graham.h"
 #include "chan.h"
@@ -39,6 +43,8 @@ bool areEqualHulls(const TContainer1& first, const TContainer2& second, TPred pr
    return true;
 }
 
+using Point_2 = CGAL::Exact_predicates_inexact_constructions_kernel::Point_2;
+
 int main()
 {
    std::mt19937 gen(19);
@@ -52,6 +58,13 @@ int main()
       auto resBst = algorithms::BstConvexHull::Create(points);
       auto resGraham = algorithms::GrahamScan(points);
       auto resChan = algorithms::Chan(points);
+
+      std::vector<Point_2> points2;
+      points2.reserve(pointsNum);
+      for (const Point& point : points)
+         points2.emplace_back(point.x, point.y);
+      std::vector<Point_2> result;
+      CGAL::ch_akl_toussaint(points2.begin(), points2.end(), std::back_inserter(result));
 
       if (!areEqualHulls(resBst.GetPoints(), resGraham,
          [&](const Point& left, const Point& right)
@@ -70,6 +83,15 @@ int main()
          }))
       {
          std::cerr << "chan error\n" << test;
+         return 2;
+      }
+      if (!areEqualHulls(resGraham, result,
+         [](const Point& left, const Point_2& right)
+         {
+            return left.x == right.x() && left.y == right.y();
+         }))
+      {
+         std::cerr << "akl error\n" << test;
          return 2;
       }
    }

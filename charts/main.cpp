@@ -3,22 +3,26 @@
 #include <fstream>
 #include <vector>
 
+#include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
+#include <CGAL/ch_akl_toussaint.h>
+#include <CGAL/ch_graham_andrew.h>
+
 #include "point.h"
 #include "bsthull.h"
 #include "graham.h"
 #include "chan.h"
 
+using Point_2 = CGAL::Exact_predicates_inexact_constructions_kernel::Point_2;
 
-template<class TFn>
-double measureAlgo(TFn fn, const std::vector<Point>& points)
+template<class TFn, class ...TArgs>
+double measureAlgo(TFn fn, size_t testsNum, TArgs&&... args)
 {
    using namespace std::chrono;
-   const size_t minTestsNum = 10;
-   const size_t testsNum = std::max(minTestsNum, 100'000U / points.size());
+
    const auto tStart = high_resolution_clock::now();
 
    for (size_t test = 0; test < testsNum; ++test)
-      const auto res = fn(points);
+      (void) fn(std::forward<TArgs>(args)...);
 
    const auto tEnd = high_resolution_clock::now();
 
@@ -30,7 +34,7 @@ int main()
    std::ifstream fin("in.txt");
    std::ofstream fout("out.txt");
 
-   std::ofstream("algoNames.txt") << "new algo\ngraham scan\nchan\n";
+   std::ofstream("algoNames.txt") << "new algo\nmy graham scan\nchan\ngraham\nakl_toussaint";
 
    size_t testsNum;
    fin >> testsNum;
@@ -38,13 +42,30 @@ int main()
    {
       int pointsNum;
       fin >> pointsNum;
-      std::vector<Point> points(pointsNum);
-      for (Point& point : points) fin >> point.x >> point.y;
 
+      // TODO: Remove our impl of point and try to use traits as in CGAL
+      std::vector<Point> points;
+      points.reserve(pointsNum);
+      std::vector<Point_2> points2;
+      points2.reserve(pointsNum);
+      for (int i = 0; i < pointsNum; ++i)
+      {
+         double x, y;
+         fin >> x >> y;
+         points.push_back({ x, y });
+         points2.emplace_back(x, y);
+      }
+
+      const size_t runsNum = std::max(10, 100'000 / pointsNum);
+      std::vector<Point_2> result(pointsNum);
       fout
-         << measureAlgo(algorithms::BstConvexHull::Create, points) << ' '
-         << measureAlgo(algorithms::GrahamScan, points) << ' '
-         << measureAlgo(algorithms::Chan, points) << '\n';
+         << measureAlgo(algorithms::BstConvexHull::Create, runsNum, points) << ' '
+         << measureAlgo(algorithms::GrahamScan, runsNum, points) << ' '
+         << measureAlgo(algorithms::Chan, runsNum, points) << ' '
+         << measureAlgo(CGAL::ch_graham_andrew<std::vector<Point_2>::iterator, std::vector<Point_2>::iterator>,
+            runsNum, points2.begin(), points2.end(), result.begin()) << ' '
+         << measureAlgo(CGAL::ch_akl_toussaint<std::vector<Point_2>::iterator, std::vector<Point_2>::iterator>,
+            runsNum, points2.begin(), points2.end(), result.begin()) << '\n';
    }
 
    return 0;
