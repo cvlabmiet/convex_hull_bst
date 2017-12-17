@@ -9,6 +9,10 @@ addons:
       packages:
          - g++-7
 
+before_install:
+   - sudo apt-get -qq update
+   - sudo apt-get install -y libcgal-dev
+
 script:
    - CXX=/usr/bin/g++-7 cmake .
    - cmake --build .
