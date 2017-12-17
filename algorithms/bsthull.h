@@ -18,9 +18,6 @@ struct BstConvexHull
 
       if (ccw(*prev, point, *next))
       {
-         // works not well on it and pr on different sides of tree
-         convexHull.emplace_hint(prev, point);
-
          while (true)
          {
             const auto afterNext = nextIt(next);
@@ -38,6 +35,7 @@ struct BstConvexHull
             convexHull.erase(prev);
             prev = beforePrev;
          }
+         convexHull.emplace_hint(prev, point);
       }
    }
 
@@ -82,7 +80,7 @@ struct BstConvexHull
 
    struct less
    {
-      bool operator()(const Point& left, const Point& right) const
+      bool operator()(const Point& left, const Point& right) const noexcept
       {
          const bool leftUp =  0 < left.y;
          const bool rightUp = 0 < right.y;
@@ -95,8 +93,8 @@ struct BstConvexHull
       }
    };
 
-   const std::set<Point, less>& GetPoints() const { return convexHull; }
-   const Point& GetCenter() const { return center; }
+   const std::set<Point, less>& GetPoints() const noexcept { return convexHull; }
+   const Point& GetCenter() const noexcept { return center; }
 
 private:
    bool ccw(const Point& a, const Point& b, const Point& c) const noexcept
@@ -119,7 +117,7 @@ private:
       return it != convexHull.begin() ? std::prev(it) : std::prev(convexHull.end());
    }
 
-   Point center;
+   const Point center;
    std::set<Point, less> convexHull;
 };
 
