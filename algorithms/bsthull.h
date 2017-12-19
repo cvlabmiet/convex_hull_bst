@@ -3,6 +3,8 @@
 #include <set>
 #include <vector>
 
+#include <boost/pool/pool_alloc.hpp>
+
 #include "point.h"
 
 namespace algorithms
@@ -56,6 +58,7 @@ struct BstConvexHull
      Point furthestPoint = maxPoint;
      double furthestDist = 0;
 
+
      const auto divideVect = maxPoint - minPoint;
      for (const Point& point : points)
      {
@@ -93,7 +96,11 @@ struct BstConvexHull
       }
    };
 
-   const std::set<Point, less>& GetPoints() const noexcept { return convexHull; }
+   // TODO: I never free singleton memory
+   using setallocator = boost::fast_pool_allocator<Point,
+         boost::default_user_allocator_new_delete, boost::details::pool::default_mutex, 1048576>;
+
+   const std::set<Point, less, setallocator>& GetPoints() const noexcept { return convexHull; }
    const Point& GetCenter() const noexcept { return center; }
 
 private:
@@ -118,7 +125,7 @@ private:
    }
 
    const Point center;
-   std::set<Point, less> convexHull;
+   std::set<Point, less, setallocator> convexHull;
 };
 
 }

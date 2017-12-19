@@ -6,8 +6,12 @@ cmake_minimum_required(VERSION 3.2)
 find_package(CGAL REQUIRED)
 include(${CGAL_USE_FILE})
 include( CGAL_CreateSingleSourceCGALProgram )
-include_directories (BEFORE "../../include")
-include_directories (BEFORE "include")
+include_directories(BEFORE "../../include")
+include_directories(BEFORE "include")
+
+# Boost
+find_package(Boost 1.60)
+include_directories(${Boost_INCLUDE_DIR})
 
 # Warnings
 if (MSVC)

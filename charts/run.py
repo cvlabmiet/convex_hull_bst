@@ -51,7 +51,7 @@ def readResult():
 
 
 def main(executable):
-   x = range(10, 101, 10)
+   x = range(1, 21, 1)
    genInput(x, lambda percent : genPointsByPercentInCircle(100000, percent / 100))
    runTest(executable)
    y = readResult()

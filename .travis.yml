@@ -12,6 +12,7 @@ addons:
 before_install:
    - sudo apt-get -qq update
    - sudo apt-get install -y libcgal-dev
+   - sudo apt-get install -y libboost-all-dev
 
 script:
    - CXX=/usr/bin/g++-7 cmake .
