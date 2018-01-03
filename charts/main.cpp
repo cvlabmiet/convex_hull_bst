@@ -34,10 +34,11 @@ int main()
    std::ifstream fin("in.txt");
    std::ofstream fout("out.txt");
 
-   std::ofstream("algoNames.txt") << "new algo\nmy graham scan\nchan\ngraham\nakl_toussaint";
+   std::ofstream("algoNames.txt") << "New algorithm\nGraham scan\nakl_toussaint";
 
    size_t testsNum;
    fin >> testsNum;
+
    for (size_t test = 0; test < testsNum; ++test)
    {
       int pointsNum;
@@ -58,14 +59,17 @@ int main()
 
       const size_t runsNum = std::max(10, 100'000 / pointsNum);
       std::vector<Point_2> result(pointsNum);
+      if (test == 0)
+      {
+         for (int i = 0; i < 10; ++i)
+            algorithms::BstConvexHull::Create(points);
+      }
       fout
          << measureAlgo(algorithms::BstConvexHull::Create, runsNum, points) << ' '
-         << measureAlgo(algorithms::GrahamScan, runsNum, points) << ' '
-         << measureAlgo(algorithms::Chan, runsNum, points) << ' '
          << measureAlgo(CGAL::ch_graham_andrew<std::vector<Point_2>::iterator, std::vector<Point_2>::iterator>,
-            runsNum, points2.begin(), points2.end(), result.begin()) << ' '
+            runsNum, points2.begin(), points2.end(), result.begin()) /*<< ' '
          << measureAlgo(CGAL::ch_akl_toussaint<std::vector<Point_2>::iterator, std::vector<Point_2>::iterator>,
-            runsNum, points2.begin(), points2.end(), result.begin()) << '\n';
+            runsNum, points2.begin(), points2.end(), result.begin()) */<< '\n';
    }
 
    return 0;
