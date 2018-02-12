@@ -1,8 +1,13 @@
 from matplotlib import pyplot as plt
+from matplotlib.font_manager import FontProperties
 from subprocess import call
 import random
 import sys
 import math
+
+font = FontProperties()
+font.set_family('Times New Roman')
+font.set_size(12)
 
 def genPointsOnCircle(size):
    for i in range(size):
@@ -47,18 +52,34 @@ def readAlgoNames():
 
 def readResult():
    with open("out.txt", 'r') as f:
-      return [ list(map(float, line.split())) for line in f]
+      return list(zip(*[ list(map(float, line.split())) for line in f]))
 
 
 def main(executable):
-   x = range(10, 101, 10)
-   genInput(x, lambda percent : genPointsByPercentInCircle(100000, percent / 100))
-   runTest(executable)
-   y = readResult()
-   g = plt.plot(x, y)
-   plt.legend(g, readAlgoNames())
+   x = range(1, 21, 1)#[1, 2.5, 5, 7.5, 10, 12.5, 15, 17.5, 20]
+   print(list(x))
+   l = [1000, 2500, 5000, 7500, 10000, 25000, 50000, 75000, 100000]
+   print(l)
+   for n in l:
+      plt.figure()
+      genInput(x, lambda percent : genPointsByPercentInCircle(n, percent / 100))
+      runTest(executable)
+      y = readResult()
+      print([f[0] / f[1] for f in y])
 
-   plt.grid()
+      linestyles = ['k--', 'k-']
+      g = []
+      for i in range(len(y)):
+         g.append(plt.plot(x, y[i], linestyles[i])[0])
+
+      #plt.title(str(n))
+      plt.yticks(fontname = "Times New Roman", fontsize = 10)  
+      plt.xticks(fontname = "Times New Roman", fontsize = 10)  
+      plt.legend(g, readAlgoNames(), prop=font)
+      plt.xlabel('percentage', fontproperties=font)
+      plt.ylabel('time (sec)', fontproperties=font)
+      plt.grid()
+
    plt.show()
 
 if len(sys.argv) == 2:
