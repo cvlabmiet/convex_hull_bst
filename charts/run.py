@@ -56,7 +56,7 @@ def readResult():
 
 
 def main(executable):
-   x = range(1, 21, 1)#[1, 2.5, 5, 7.5, 10, 12.5, 15, 17.5, 20]
+   x = range(1, 21, 1)
    print(list(x))
    l = [1000, 2500, 5000, 7500, 10000, 25000, 50000, 75000, 100000]
    print(l)
@@ -65,7 +65,7 @@ def main(executable):
       genInput(x, lambda percent : genPointsByPercentInCircle(n, percent / 100))
       runTest(executable)
       y = readResult()
-      print([f[0] / f[1] for f in y])
+      print([f[1] / f[0] for f in zip(*y)])
 
       linestyles = ['k--', 'k-']
       g = []
@@ -73,14 +73,15 @@ def main(executable):
          g.append(plt.plot(x, y[i], linestyles[i])[0])
 
       #plt.title(str(n))
-      plt.yticks(fontname = "Times New Roman", fontsize = 10)  
-      plt.xticks(fontname = "Times New Roman", fontsize = 10)  
+      plt.yticks(fontname = "Times New Roman", fontsize = 10)
+      plt.xticks(fontname = "Times New Roman", fontsize = 10)
       plt.legend(g, readAlgoNames(), prop=font)
-      plt.xlabel('percentage', fontproperties=font)
-      plt.ylabel('time (sec)', fontproperties=font)
+      plt.xlabel('процент', fontproperties=font)
+      plt.ylabel('время (сек)', fontproperties=font)
       plt.grid()
+      plt.savefig('comparison_' + str(n) + '.svg', bbox_inches='tight')
 
-   plt.show()
+   #plt.show()
 
 if len(sys.argv) == 2:
    main(sys.argv[1])
