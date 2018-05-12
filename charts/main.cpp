@@ -47,7 +47,7 @@ int main()
          points.emplace_back(x, y);
       }
 
-      const size_t runsNum = std::max(20, 1'000'000 / pointsNum);
+      const size_t runsNum = std::max(30, 10'000'000 / pointsNum);
       std::vector<Point> result(pointsNum);
 
       // heat up cache for algo
