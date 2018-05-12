@@ -9,56 +9,124 @@
 
 namespace algorithms
 {
+namespace impl
+{
+bool ccw(const Vector& a, const Vector& b, const Vector& c) noexcept
+{
+   return (b.x()*c.y() - c.x()*b.y()) -
+      (a.x()*c.y() - c.x() * a.y()) +
+      (a.x()*b.y() - b.x()*a.y()) > 0;
+}
+
+struct less
+{
+   bool operator()(const Vector& left, const Vector& right) const noexcept
+   {
+      const bool leftUp =  0 < left.y();
+      const bool rightUp = 0 < right.y();
+      if (leftUp != rightUp)
+         return leftUp < rightUp;
+      if (left.y() == right.y() && left.y() == 0)
+         return (0 < left.x()) < (0 < right.x());
+
+      return ccw(left, right, Vector(0.0, 0.0));
+   }
+};
+
+struct CyclicSet
+{
+   // TODO: I never free singleton memory
+   using setallocator = boost::fast_pool_allocator<Point,
+      boost::default_user_allocator_new_delete, boost::details::pool::default_mutex, 1048576>;
+   using settype = std::set<Vector, less, setallocator>;
+   using iterator = settype::iterator;
+
+   auto upper_bound(const Vector& vect) const noexcept
+   {
+      const auto it = innerset.upper_bound(vect);
+      return it != innerset.end() ? it : innerset.begin();
+   }
+
+   auto next(const iterator& it) const noexcept
+   {
+      const auto nextIt = std::next(it);
+      return nextIt != innerset.end() ? nextIt : innerset.begin();
+   }
+
+   auto prev(const iterator& it) const noexcept
+   {
+      return it != innerset.begin() ? std::prev(it) : std::prev(innerset.end());
+   }
+
+   void erase(const iterator& it) noexcept
+   {
+      innerset.erase(it);
+   }
+
+   void emplace_hint(const iterator& it, const Vector& vect) noexcept
+   {
+      innerset.emplace_hint(it, vect);
+   }
+
+   void emplace(const Vector& vect) noexcept
+   {
+      innerset.emplace(vect);
+   }
+
+   settype innerset;
+};
+}
 
 struct BstConvexHull
 {
+   BstConvexHull(Point center) : center(center) {}
+
    void AddPoint(const Point& pt)
    {
-      const Point point = pt - center;
-      auto next = getIt(convexHull.upper_bound(point));
-      auto prev = prevIt(next);
+      using impl::ccw;
 
-      if (ccw(*prev, point, *next))
+      const Vector vector = pt - center;
+      auto next = hull.upper_bound(vector);
+      auto prev = hull.prev(next);
+
+      if (ccw(*prev, vector, *next))
       {
          while (true)
          {
-            const auto afterNext = nextIt(next);
-            if (ccw(point, *next, *afterNext))
+            const auto afterNext = hull.next(next);
+            if (ccw(vector, *next, *afterNext))
                break;
-            convexHull.erase(next);
+            hull.erase(next);
             next = afterNext;
          }
 
          while (true)
          {
-            const auto beforePrev = prevIt(prev);
-            if (ccw(*beforePrev, *prev, point))
+            const auto beforePrev = hull.prev(prev);
+            if (ccw(*beforePrev, *prev, vector))
                break;
-            convexHull.erase(prev);
+            hull.erase(prev);
             prev = beforePrev;
          }
-         convexHull.emplace_hint(prev, point);
+         hull.emplace_hint(prev, vector);
       }
    }
-
-   BstConvexHull(Point center) : center(center) {}
 
    static BstConvexHull Create(const std::vector<Point>& points)
    {
      Point maxPoint = points[0];
      Point minPoint = points[1];
-     if (maxPoint.x < minPoint.x)
+     if (maxPoint.x() < minPoint.x())
         std::swap(minPoint, maxPoint);
 
      for (const Point& point : points)
      {
-        if (point.x > maxPoint.x) maxPoint = point;
-        if (point.x < minPoint.x) minPoint = point;
+        if (point.x() > maxPoint.x()) maxPoint = point;
+        if (point.x() < minPoint.x()) minPoint = point;
      }
+
      Point furthestPoint = maxPoint;
      double furthestDist = 0;
-
-
      const auto divideVect = maxPoint - minPoint;
      for (const Point& point : points)
      {
@@ -70,10 +138,13 @@ struct BstConvexHull
         }
      }
 
-     BstConvexHull convexHull{ (minPoint + maxPoint + furthestPoint) / 3 };
-     convexHull.convexHull.emplace(minPoint - convexHull.center);
-     convexHull.convexHull.emplace(maxPoint - convexHull.center);
-     convexHull.convexHull.emplace(furthestPoint - convexHull.center);
+     BstConvexHull convexHull{ Point(
+        (minPoint.x() + maxPoint.x() + furthestPoint.x()) / 3,
+        (minPoint.y() + maxPoint.y() + furthestPoint.y()) / 3) };
+
+     convexHull.hull.emplace(minPoint - convexHull.center);
+     convexHull.hull.emplace(maxPoint - convexHull.center);
+     convexHull.hull.emplace(furthestPoint - convexHull.center);
 
      for (const Point& point : points)
         convexHull.AddPoint(point);
@@ -81,51 +152,12 @@ struct BstConvexHull
      return convexHull;
    }
 
-   struct less
-   {
-      bool operator()(const Point& left, const Point& right) const noexcept
-      {
-         const bool leftUp =  0 < left.y;
-         const bool rightUp = 0 < right.y;
-         if (leftUp != rightUp)
-            return leftUp < rightUp;
-         if (left.y == right.y && left.y == 0)
-            return (0 < left.x) < (0 < right.x);
-
-         return left * right > 0.0;
-      }
-   };
-
-   // TODO: I never free singleton memory
-   using setallocator = boost::fast_pool_allocator<Point,
-         boost::default_user_allocator_new_delete, boost::details::pool::default_mutex, 1048576>;
-
-   const std::set<Point, less, setallocator>& GetPoints() const noexcept { return convexHull; }
+   const impl::CyclicSet::settype& GetPoints() const noexcept { return hull.innerset; }
    const Point& GetCenter() const noexcept { return center; }
 
 private:
-   bool ccw(const Point& a, const Point& b, const Point& c) const noexcept
-   {
-      return (b.x*c.y - c.x*b.y) -
-         (a.x*c.y - c.x * a.y) +
-         (a.x*b.y - b.x*a.y) > 0;
-   }
-
-   std::set<Point, less>::iterator getIt(std::set<Point, less>::iterator it) const noexcept
-   {
-      return it != convexHull.end() ? it : convexHull.begin();
-   }
-   std::set<Point, less>::iterator nextIt(std::set<Point, less>::iterator it) const noexcept
-   {
-      return getIt(std::next(it));
-   }
-   std::set<Point, less>::iterator prevIt(std::set<Point, less>::iterator it) const noexcept
-   {
-      return it != convexHull.begin() ? std::prev(it) : std::prev(convexHull.end());
-   }
-
+   impl::CyclicSet hull;
    const Point center;
-   std::set<Point, less, setallocator> convexHull;
 };
 
 }

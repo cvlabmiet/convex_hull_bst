@@ -7,9 +7,8 @@
 #include <CGAL/ch_akl_toussaint.h>
 #include <CGAL/ch_graham_andrew.h>
 
+#include "point.h"
 #include "bsthull.h"
-#include "graham.h"
-#include "chan.h"
 
 std::vector<Point> getRandomPoints(std::mt19937& i_gen, size_t n)
 {
@@ -43,7 +42,11 @@ bool areEqualHulls(const TContainer1& first, const TContainer2& second, TPred pr
    return true;
 }
 
-using Point_2 = CGAL::Exact_predicates_inexact_constructions_kernel::Point_2;
+bool areEqualPoints(const Point& left, const Point& right)
+{
+   const double eps = 1e-9;
+   return abs(left.x() - right.x()) < eps && abs(left.y() - right.y()) < eps;
+}
 
 int main()
 {
@@ -55,45 +58,21 @@ int main()
    {
       auto points = getRandomPoints(gen, pointsNum);
 
-      auto resBst = algorithms::BstConvexHull::Create(points);
-      auto resGraham = algorithms::GrahamScan(points);
-      auto resChan = algorithms::Chan(points);
+      std::vector<Point> expected;
+      CGAL::ch_akl_toussaint(points.begin(), points.end(), std::back_inserter(expected));
 
-      std::vector<Point_2> points2;
-      points2.reserve(pointsNum);
-      for (const Point& point : points)
-         points2.emplace_back(point.x, point.y);
-      std::vector<Point_2> result;
-      CGAL::ch_akl_toussaint(points2.begin(), points2.end(), std::back_inserter(result));
+      auto actual = algorithms::BstConvexHull::Create(points);
 
-      if (!areEqualHulls(resBst.GetPoints(), resGraham,
-         [&](const Point& left, const Point& right)
+      if (!areEqualHulls(expected, actual.GetPoints(),
+         [&](const Point& right, const Vector& left)
          {
-            return left + resBst.GetCenter() == right;
+            return areEqualPoints(actual.GetCenter() + left, right);
          }))
       {
          std::cerr << "bst error\n" << test;
          return 1;
       }
-
-      if (!areEqualHulls(resGraham, resChan,
-         [](const Point& left, const Point& right)
-         {
-            return left == right;
-         }))
-      {
-         std::cerr << "chan error\n" << test;
-         return 2;
-      }
-      if (!areEqualHulls(resGraham, result,
-         [](const Point& left, const Point_2& right)
-         {
-            return left.x == right.x() && left.y == right.y();
-         }))
-      {
-         std::cerr << "akl error\n" << test;
-         return 2;
-      }
+      std::cout << "test " << test << " passed\n";
    }
 
    return 0;
