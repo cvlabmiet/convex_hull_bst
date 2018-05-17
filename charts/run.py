@@ -4,15 +4,19 @@ from subprocess import call
 import random
 import sys
 import math
+from scipy.spatial import ConvexHull
+from shapely import geometry
 
 font = FontProperties()
 font.set_family('Times New Roman')
 font.set_size(12)
 
+
 def genPointsOnCircle(size):
    for i in range(size):
       angle = random.uniform(0, 2 * math.pi)
       yield (math.cos(angle), math.sin(angle))
+
 
 def genPointsInCircle(size):
    for i in range(size):
@@ -20,15 +24,47 @@ def genPointsInCircle(size):
       radius = random.random()
       yield (radius * math.cos(angle), radius * math.sin(angle))
 
-def genPointsByPercentInCircle(size, percent):
-   pointsOnCircle = round(size * percent)
-   res = list(genPointsOnCircle(pointsOnCircle)) + list(genPointsInCircle(size - pointsOnCircle))
+
+def genPointsInSquare(size):
+   return [(random.random(), random.random()) for i in range(size)]
+
+
+def triangleArea(triangle):
+   def distance(p1, p2):
+      return math.hypot(p1[0]-p2[0], p1[1]-p2[1])
+
+   a, b, c = triangle
+   first = distance(a, b)
+   second = distance(b, c)
+   thrid = distance(c, a)
+   p = 0.5 * (first + second + thrid)
+   return math.sqrt(p * (p - first) * (p - second) * (p - thrid))
+
+
+def getTriangles(points):
+   p = [points[i] for i in ConvexHull(points).vertices]
+
+   t = [(p[0], p[i], p[i+1]) for i in range(1, len(p)-1) ]
+   w = [triangleArea(x) for x in t]
+   return (t, w)
+
+
+def getRandomInTriangle(triangle):
+   a, b, c = triangle
+   s, t = sorted([random.random(), random.random()])
+   return (s * a[0] + (t-s)*b[0] + (1-t)*c[0],
+           s * a[1] + (t-s)*b[1] + (1-t)*c[1])
+
+
+def genPointsWithConvexHullPercent(size, percent):
+   pointsOnHull = list(genPointsOnCircle(round(size * percent)))
+
+   triangles, weights = getTriangles(pointsOnHull)
+   pointsInHull = [getRandomInTriangle(t) for t in random.choices(triangles, weights=weights, k = size - len(pointsOnHull))]
+
+   res = pointsOnHull + pointsInHull
    random.shuffle(res)
    return res
-
-
-def genPointsSquare(size):
-   return [(random.random(), random.random()) for i in range(size)]
 
 
 def genInput(sizes, genFunc):
@@ -62,7 +98,7 @@ def main(executable):
    print(l)
    for n in l:
       plt.figure()
-      genInput(x, lambda percent : genPointsByPercentInCircle(n, percent / 100))
+      genInput(x, lambda percent : genPointsWithConvexHullPercent(n, percent / 100))
       runTest(executable)
       y = readResult()
       print([f[1] / f[0] for f in zip(*y)])
