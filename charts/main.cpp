@@ -2,6 +2,7 @@
 #include <chrono>
 #include <fstream>
 #include <vector>
+#include <iterator>
 
 #include <CGAL/ch_graham_andrew.h>
 
@@ -9,25 +10,27 @@
 #include "bsthull.h"
 
 template<class TFn, class ...TArgs>
-double measureAlgo(TFn fn, size_t testsNum, TArgs&&... args)
+double measureAlgo(TFn fn, size_t runsExternal, size_t runsInternal)
 {
    using namespace std::chrono;
 
-   const auto tStart = high_resolution_clock::now();
+   double bestResult = std::numeric_limits<double>::max();
 
-   for (size_t test = 0; test < testsNum; ++test)
-      (void) fn(std::forward<TArgs>(args)...);
+   for (size_t run = 0; run < runsExternal; ++run)
+   {
+      const auto tStart = high_resolution_clock::now();
+      for (size_t test = 0; test < runsInternal; ++test) fn();
+      const auto tEnd = high_resolution_clock::now();
+      bestResult = std::min(bestResult, duration_cast<duration<double>>(tEnd - tStart).count() / runsInternal);
+   }
 
-   const auto tEnd = high_resolution_clock::now();
-
-   return duration_cast<duration<double>>(tEnd - tStart).count() / testsNum;
+   return bestResult;
 }
 
 int main()
 {
    std::ifstream fin("in.txt");
    std::ofstream fout("out.txt");
-
    std::ofstream("algoNames.txt") << "Graham scan\nNew algorithm";
 
    size_t testsNum;
@@ -47,18 +50,20 @@ int main()
          points.emplace_back(x, y);
       }
 
-      const size_t runsNum = std::max(30, 10'000'000 / pointsNum);
-      std::vector<Point> result(pointsNum);
+      const size_t runsExternal = 20;
+      const size_t runsInternal = std::max(30, 1'000'000 / pointsNum);
 
-      // heat up cache for algo
-      measureAlgo(CGAL::ch_graham_andrew<std::vector<Point>::iterator, std::vector<Point>::iterator>,
-         runsNum, points.begin(), points.end(), result.begin());
-      fout << measureAlgo(CGAL::ch_graham_andrew<std::vector<Point>::iterator, std::vector<Point>::iterator>,
-         runsNum, points.begin(), points.end(), result.begin()) << ' ';
+      fout << measureAlgo(
+            [&points]() {
+            std::vector<Point> result;
+            result.reserve(points.size());
+            CGAL::ch_graham_andrew(points.begin(), points.end(), std::back_inserter(result));
+         },
+         runsExternal, runsInternal) << ' ';
 
-      // heat up cache for algo
-      measureAlgo(algorithms::BstConvexHull::Create, runsNum, points);
-      fout << measureAlgo(algorithms::BstConvexHull::Create, runsNum, points) << '\n';
+      fout << measureAlgo(
+         [&points]() { algorithms::BstConvexHull::Create(points); },
+         runsExternal, runsInternal) << '\n';
    }
 
    return 0;
