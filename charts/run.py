@@ -50,10 +50,10 @@ def getTriangles(points):
 
 
 def getRandomInTriangle(triangle):
-   a, b, c = triangle
-   s, t = sorted([random.random(), random.random()])
-   return (s * a[0] + (t-s)*b[0] + (1-t)*c[0],
-           s * a[1] + (t-s)*b[1] + (1-t)*c[1])
+   A, B, C = triangle
+   r1, r2 = random.random(), random.random()
+   return ((1 - math.sqrt(r1)) * A[0] + (math.sqrt(r1) * (1 - r2)) * B[0] + (math.sqrt(r1) * r2) * C[0],
+           (1 - math.sqrt(r1)) * A[1] + (math.sqrt(r1) * (1 - r2)) * B[1] + (math.sqrt(r1) * r2) * C[1])
 
 
 def genPointsWithConvexHullPercent(size, percent):
