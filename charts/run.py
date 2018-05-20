@@ -25,8 +25,9 @@ def genPointsInCircle(size):
       yield (radius * math.cos(angle), radius * math.sin(angle))
 
 
-def genPointsInSquare(size):
-   return [(random.random(), random.random()) for i in range(size)]
+def genPointsNormal(size):
+   return [(random.gauss(0, 1), random.gauss(0, 1)) for i in range(size)]
+
 
 
 def triangleArea(triangle):
@@ -71,7 +72,7 @@ def genInput(sizes, genFunc):
    with open("in.txt", 'w') as f:
       f.write(str(len(sizes)) + '\n')
       for size in sizes:
-         points = genFunc(size)
+         points = list(genFunc(size))
          f.write(str(len(points)) + '\n')
          for x, y in points:
             f.write(str(x) + ' ' + str(y) + '\n')
@@ -90,11 +91,26 @@ def readResult():
    with open("out.txt", 'r') as f:
       return list(zip(*[ list(map(float, line.split())) for line in f]))
 
+def plotAndSave(x, values, names, labelx, labely, filename):
+   linestyles = ['k--', 'k-']
+   g = []
+   for i in range(len(values)):
+      g.append(plt.plot(x, values[i], linestyles[i])[0])
 
-def main(executable):
-   x = range(1, 21, 1)
+   plt.yticks(fontname = "Times New Roman", fontsize = 10)
+   plt.xticks(fontname = "Times New Roman", fontsize = 10)
+   plt.legend(g, readAlgoNames(), prop=font)
+   plt.xlabel(labelx, fontproperties=font)
+   plt.ylabel(labely, fontproperties=font)
+   plt.grid()
+
+   plt.savefig(filename, bbox_inches='tight')
+
+
+def new_comparison(executable):
+   x = [0.1, 0.5, 1, 1.5, 2, 2.5, 3]
    print(list(x))
-   l = [1000, 2500, 5000, 7500, 10000, 25000, 50000, 75000, 100000]
+   l = [10000, 25000, 50000, 75000, 100000, 250000, 500000, 1000000]
    print(l)
    for n in l:
       plt.figure()
@@ -103,24 +119,20 @@ def main(executable):
       y = readResult()
       print([f[1] / f[0] for f in zip(*y)])
 
-      linestyles = ['k--', 'k-']
-      g = []
-      for i in range(len(y)):
-         g.append(plt.plot(x, y[i], linestyles[i])[0])
+      plotAndSave(x, y, readAlgoNames(), 'процент', 'время (сек)', 'comparison2_' + str(n) + '.svg')
 
-      #plt.title(str(n))
-      plt.yticks(fontname = "Times New Roman", fontsize = 10)
-      plt.xticks(fontname = "Times New Roman", fontsize = 10)
-      plt.legend(g, readAlgoNames(), prop=font)
-      plt.xlabel('процент', fontproperties=font)
-      plt.ylabel('время (сек)', fontproperties=font)
-      plt.grid()
-      plt.savefig('comparison_' + str(n) + '.svg', bbox_inches='tight')
 
-   #plt.show()
+def classic_comparison(executable):
+   x = [1000, 2500, 5000, 7500, 10000, 25000, 50000, 75000, 100000]
+   plt.figure()
+   genInput(x, genPointsNormal)
+   runTest(executable)
+
+   plotAndSave(x, readResult(), readAlgoNames(), 'количество точек', 'время (сек)', 'classic_gauss.svg')
+
 
 if len(sys.argv) == 2:
-   main(sys.argv[1])
+   classic_comparison(sys.argv[1])
 else:
    print("Usage: run.py path_to_executable")
 
