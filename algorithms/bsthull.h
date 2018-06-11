@@ -84,25 +84,28 @@ struct BstConvexHull {
   }
 
   static BstConvexHull Create(const std::vector<Point>& points) {
-    Point maxPoint = points[0];
-    Point minPoint = points[1];
-    if (maxPoint.x() < minPoint.x()) std::swap(minPoint, maxPoint);
+    const auto minMaxIt =
+        std::minmax_element(points.begin(), points.end(),
+                            [](const Point& left, const Point& right) {
+                              return left.x() < right.x();
+                            });
 
-    for (const Point& point : points) {
-      if (point.x() > maxPoint.x()) maxPoint = point;
-      if (point.x() < minPoint.x()) minPoint = point;
-    }
+    const Point minPoint = *minMaxIt.first;
+    const Point maxPoint = *minMaxIt.second;
 
-    Point furthestPoint = maxPoint;
-    double furthestDist = 0;
-    const auto divideVect = maxPoint - minPoint;
-    for (const Point& point : points) {
-      const double dist = abs((point - minPoint) * divideVect);
-      if (dist > furthestDist) {
-        furthestPoint = point;
-        furthestDist = dist;
+    const Point furthestPoint = [&]() {
+      Point result = maxPoint;
+      double furthestDist = 0;
+      const auto divideVect = maxPoint - minPoint;
+      for (const Point& point : points) {
+        const double dist = abs((point - minPoint) * divideVect);
+        if (dist > furthestDist) {
+          result = point;
+          furthestDist = dist;
+        }
       }
-    }
+      return result;
+    }();
 
     BstConvexHull convexHull{
         Point((minPoint.x() + maxPoint.x() + furthestPoint.x()) / 3,
