@@ -14,7 +14,7 @@ std::vector<Point> getRandomPoints(std::mt19937& i_gen, size_t n) {
   std::uniform_real_distribution<double> dist;
   std::vector<Point> result;
   result.reserve(n);
-  for (size_t i = 0; i < n; ++i) result.push_back({dist(i_gen), dist(i_gen)});
+  for (size_t i = 0; i < n; ++i) result.emplace_back(dist(i_gen), dist(i_gen));
   return result;
 }
 
@@ -47,13 +47,13 @@ int main() {
   const size_t pointsNum = 1000;
 
   for (size_t test = 0; test < testsNum; ++test) {
-    auto points = getRandomPoints(gen, pointsNum);
+    const auto points = getRandomPoints(gen, pointsNum);
 
     std::vector<Point> expected;
     CGAL::ch_akl_toussaint(points.begin(), points.end(),
                            std::back_inserter(expected));
 
-    auto actual = algorithms::BstConvexHull::Create(points);
+    const auto actual = algorithms::BstConvexHull::Create(points);
 
     if (!areEqualHulls(expected, actual.GetPoints(),
                        [&](const Point& right, const Vector& left) {
