@@ -1,3 +1,9 @@
+/// @file randomtesting.cpp
+/// @brief Main function for testing new algorithm versus algo from CGAl with
+///        random generated points
+/// @author Dmitry Matrokhin
+/// @date 2018/06/12
+
 #include <iostream>
 #include <random>
 #include <set>
@@ -10,6 +16,7 @@
 #include "bsthull.h"
 #include "point.h"
 
+/// @brief Gets randomly generated points in square
 std::vector<Point> getRandomPoints(std::mt19937& i_gen, size_t n) {
   std::uniform_real_distribution<double> dist;
   std::vector<Point> result;
@@ -18,6 +25,8 @@ std::vector<Point> getRandomPoints(std::mt19937& i_gen, size_t n) {
   return result;
 }
 
+/// @brief Determines if convex hulls are equal or not
+///        There can be a shift in first convex hull relative to second one
 template <class TContainer1, class TContainer2, class TPred>
 bool areEqualHulls(const TContainer1& first, const TContainer2& second,
                    TPred pred) {
@@ -36,11 +45,13 @@ bool areEqualHulls(const TContainer1& first, const TContainer2& second,
   return true;
 }
 
+/// @brief Checks equality of points with epsilon = 1e-9
 bool areEqualPoints(const Point& left, const Point& right) {
   const double eps = 1e-9;
   return abs(left.x() - right.x()) < eps && abs(left.y() - right.y()) < eps;
 }
 
+/// @brief Main function, does random testing of new algorithm
 int main() {
   std::mt19937 gen(19);
   const size_t testsNum = 100;
