@@ -3,8 +3,6 @@
 #include <set>
 #include <vector>
 
-#include <boost/pool/pool_alloc.hpp>
-
 #include "point.h"
 
 namespace algorithms
@@ -35,10 +33,7 @@ struct less
 
 struct CyclicSet
 {
-   // TODO: I never free singleton memory
-   using setallocator = boost::fast_pool_allocator<Point,
-      boost::default_user_allocator_new_delete, boost::details::pool::default_mutex, 1048576>;
-   using settype = std::set<Vector, less, setallocator>;
+   using settype = std::set<Vector, less>;
    using iterator = settype::iterator;
 
    auto upper_bound(const Vector& vect) const noexcept
