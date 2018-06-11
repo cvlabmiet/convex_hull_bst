@@ -1,3 +1,8 @@
+/// @file main.cpp
+/// @brief Main function to run algorithms and measure their working time
+/// @author Dmitry Matrokhin
+/// @date 2018/06/12
+
 #include <algorithm>
 #include <chrono>
 #include <fstream>
@@ -9,6 +14,7 @@
 #include "bsthull.h"
 #include "point.h"
 
+/// @brief Measures working time of the given function
 template <class TFn, class... TArgs>
 double measureAlgo(TFn fn, size_t runsExternal, size_t runsInternal) {
   using namespace std::chrono;
@@ -27,6 +33,8 @@ double measureAlgo(TFn fn, size_t runsExternal, size_t runsInternal) {
   return bestResult;
 }
 
+/// @brief Main function, does running of new algorithm and graham scan and
+///        measures their working time
 int main() {
   std::ifstream fin("in.txt");
   std::ofstream fout("out.txt");

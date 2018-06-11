@@ -132,7 +132,7 @@ def classic_comparison(executable):
 
 
 if len(sys.argv) == 2:
-   classic_comparison(sys.argv[1])
+   new_comparison(sys.argv[1])
 else:
    print("Usage: run.py path_to_executable")
 

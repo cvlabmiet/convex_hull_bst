@@ -16,19 +16,16 @@ else()
    add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
 
-set(ALGO_DIR algorithms)
+include_directories(algorithms)
 
-include_directories(${ALGO_DIR})
-set(ALGO_HEADERS ${ALGO_DIR}/bsthull.h ${ALGO_DIR}/point.h)
-
-add_executable(main charts/main.cpp ${ALGO_HEADERS})
+add_executable(main charts/main.cpp)
 target_link_libraries(main ${CGAL_LIBRARIES} ${CGAL_3RD_PARTY_LIBRARIES})
 
 set_property(TARGET main PROPERTY CXX_STANDARD 14)
 
 enable_testing()
 
-add_executable(randomtest test/randomtesting.cpp ${ALGO_HEADERS})
+add_executable(randomtest test/randomtesting.cpp)
 target_link_libraries(randomtest ${CGAL_LIBRARIES} ${CGAL_3RD_PARTY_LIBRARIES})
 
 add_test(Randomtest randomtest)

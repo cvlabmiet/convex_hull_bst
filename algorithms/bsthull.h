@@ -1,4 +1,11 @@
-#pragma once
+/// @file bsthull.h
+/// @brief Definition of BstConvexHull class
+///        It is used to compute convex hull by using binary search tree (BST)
+/// @author Dmitry Matrokhin
+/// @date 2018/06/12
+
+#ifndef __BSTHULL_H
+#define __BSTHULL_H
 
 #include <set>
 #include <vector>
@@ -7,12 +14,14 @@
 
 namespace algorithms {
 namespace impl {
+/// @brief Counter-clockwise predicate
 bool ccw(const Vector& a, const Vector& b, const Vector& c) noexcept {
   return (b.x() * c.y() - c.x() * b.y()) - (a.x() * c.y() - c.x() * a.y()) +
              (a.x() * b.y() - b.x() * a.y()) >
          0;
 }
 
+/// @brief Vectors comparator, used to store them in BST
 struct less {
   bool operator()(const Vector& left, const Vector& right) const noexcept {
     const bool leftUp = 0 < left.y();
@@ -25,6 +34,7 @@ struct less {
   }
 };
 
+/// @brief Set wrapper, contains useful methods for cyclic iterating over set
 struct CyclicSet {
   using settype = std::set<Vector, less>;
   using iterator = settype::iterator;
@@ -55,9 +65,11 @@ struct CyclicSet {
 };
 }  // namespace impl
 
+/// @brief Convex hull calculator, uses new algorithm based on BST
 struct BstConvexHull {
   BstConvexHull(Point center) : center(center) {}
 
+  /// @brief Function to add new point to current convex hull
   void AddPoint(const Point& pt) {
     using impl::ccw;
 
@@ -83,6 +95,7 @@ struct BstConvexHull {
     }
   }
 
+  /// @brief Computes convex hull from initial vector of points
   static BstConvexHull Create(const std::vector<Point>& points) {
     const auto minMaxIt =
         std::minmax_element(points.begin(), points.end(),
@@ -120,9 +133,14 @@ struct BstConvexHull {
     return convexHull;
   }
 
+  /// @brief Returns set of vectors that are representing convex hull
+  /// @note For getting points that are in convex hull, you need to sum this
+  ///       vector with the center, see GetCenter function
   const impl::CyclicSet::settype& GetPoints() const noexcept {
     return hull.innerset;
   }
+
+  /// @brief Gets approximate center of the convex hull
   const Point& GetCenter() const noexcept { return center; }
 
  private:
@@ -131,3 +149,5 @@ struct BstConvexHull {
 };
 
 }  // namespace algorithms
+
+#endif // __BSTHULL_H
