@@ -20,7 +20,7 @@ before_install:
 install:
    - sudo apt-get install -y libcgal-dev
    - sudo apt-get install -y libboost-all-dev
-   - pip install pycodestyle
+   - sudo pip install pycodestyle
 
 script:
    - CXX=/usr/bin/g++-7 cmake .
