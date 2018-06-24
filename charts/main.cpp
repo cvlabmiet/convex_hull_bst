@@ -15,7 +15,7 @@
 #include "point.h"
 
 /// @brief Measures working time of the given function
-template <class TFn, class... TArgs>
+template <class TFn>
 double measureAlgo(TFn fn, size_t runsExternal, size_t runsInternal) {
   using namespace std::chrono;
 

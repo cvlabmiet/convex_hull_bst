@@ -1,6 +1,11 @@
 dist: trusty
 sudo: false
-language: cpp
+language:
+   - cpp
+   - python
+
+python:
+   - 3.5
 
 addons:
    apt:
@@ -11,9 +16,14 @@ addons:
 
 before_install:
    - sudo apt-get -qq update
+
+install:
    - sudo apt-get install -y libcgal-dev
    - sudo apt-get install -y libboost-all-dev
+   - pip install pycodestyle
 
 script:
    - CXX=/usr/bin/g++-7 cmake .
    - cmake --build .
+   - ctest -VV
+   - pycodestyle charts/run.py

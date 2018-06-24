@@ -1,4 +1,4 @@
-project(convex_hull)
+project(convex_hull_bst)
 
 cmake_minimum_required(VERSION 3.2)
 
@@ -16,16 +16,13 @@ else()
    add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
 
-include_directories(algorithms)
+# Algorithms include
+include_directories(${convex_hull_bst_SOURCE_DIR}/algorithms)
 
-add_executable(main charts/main.cpp)
-target_link_libraries(main ${CGAL_LIBRARIES} ${CGAL_3RD_PARTY_LIBRARIES})
+# Directories
+add_subdirectory(charts)
+add_subdirectory(tests)
 
-set_property(TARGET main PROPERTY CXX_STANDARD 14)
-
+# Tests
 enable_testing()
-
-add_executable(randomtest test/randomtesting.cpp)
-target_link_libraries(randomtest ${CGAL_LIBRARIES} ${CGAL_3RD_PARTY_LIBRARIES})
-
-add_test(Randomtest randomtest)
+add_test(Randomtest tests/randomtest)
